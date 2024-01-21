@@ -3,15 +3,18 @@
   (:require [odoyle.rules :as o]
             [clojure.math :as math]))
 
+;; * Helpers
+
+;; Given coordinates c1 and c2, create a new one that brings c1 closer to c2
 (defn move [c1 c2]
-
-   {:x (if (> (:x c2) (:x c1)) (+ 1 (:x c1)) (- 1 (:x c1) ) )
-    :y (if (> (:y c2) (:y c1)) (+ 1 (:y c1)) (- 1 (:y c1) ) ) }
-
+   {
+    :x (if (> (:x c2) (:x c1)) (+ 1 (:x c1)) (- 1 (:x c1) ) )
+    :y (if (> (:y c2) (:y c1)) (+ 1 (:y c1)) (- 1 (:y c1) ) )
+   } 
 )
 
+;; Given coordinates c1 and c2, calculate the Euclidian distance between them
 (defn distance [c1 c2]
-
  (let [x1 (:x c1)
        y1 (:y c1)
        x2 (:x c2)
@@ -21,23 +24,23 @@
                           (math/pow (- y1 y2) 2))))))
 
 
-(defn dump [session]
+;; * Rules, entities, and session management 
 
-   (prn (o/query-all session))
-)
+;; Dump the session
+(defn dump [session]
+   (prn (o/query-all session)))
 
 
 (def rules
   (o/ruleset
    {::pages
     [:what
+      ;; A simple page model
       [id :page/uid uid]
-      ;[id :page/cx cx]
-      ;[id :page/cy cy]
       [id :page/center coords]
       [id :page/w w]
       [id :page/h h]
-      [id :page/attractor? attractor?]
+      [id :page/attractor? is-attractor]
       [id :page/distance-to-attractor distance]
       [id :page/colour c]]
 
@@ -45,63 +48,52 @@
     [:what
       [::time :time/total tt]]
 
-
     ::movement
     [:what
+      ;; At every tick, if you find 2 pages such that one isn't an attractor and
+      ;; and one is, move the former towards the latter until the distance between
+      ;; them becomes less than 2. 
       [::time ::total tt]
       [p1 :page/attractor? false]
       [p2 :page/attractor? true]
       [p1 :page/center c1 {:then false}]
       [p2 :page/center c2]
       [p1 :page/distance-to-attractor d {:then false}]
+     :when
+     (>= d 3)
      :then
        (o/insert!  p1 :page/center (move c1 c2))
        (o/insert!  p1 :page/distance-to-attractor (distance c1 c2))
-       ;(prn "******************" total-time)
-       (dump session)
-]
-       ;;(prn "********" (move c1 c2))]
-}))
+     ]
+   }))
 
 
-(comment
-(def rules
-  (o/ruleset
-    {::print-time
-     [:what
-      [::time ::total tt]
-      :then
-      (println tt)]}))
-)
+;; create the session
+(def *session (atom (o/->session)))
 
 
-;; create session and add rule
-(def *session
-  (atom (reduce o/add-rule (o/->session) rules)))
-
-
+;;  Add all the rules and some entities to the session
 (defn init-session []
 
   (swap! *session
     (fn [session]
-      (-> session
+      (-> 
+        ;; Add all the rules
+        (reduce o/add-rule session rules)
 
+        ;; Add some page entities
         (o/insert 1 :page/center {:x 2 :y 2 } )
-        (o/insert 2 :page/center {:x 15 :y 15})
-
-
-        (o/insert 2 :page/attractor? true)
         (o/insert 1 :page/attractor? false)
-        (o/insert 1 :page/distance-to-attractor 100)
-    ) )
 
-    )
+        (o/insert 2 :page/center {:x 15 :y 15})
+        (o/insert 2 :page/attractor? true)
 
-    (prn "initial " (o/query-all *session))
-  )
-
+        ;; we also need to initialise this value with something
+        (o/insert 1 :page/distance-to-attractor 100) ))))
 
 
+
+;; A step of the runtime
 (defn tick [session counter]
   (prn counter (o/query-all session))
 
@@ -112,7 +104,8 @@
          o/fire-rules)))
 )
 
-(defn run [*session iterations]
+;; The main loop of the runtime
+(defn run [iterations]
   (loop [session *session
          counter 0]
     (if (= counter iterations)
@@ -121,9 +114,6 @@
 
 
 
-(defn -main
-  "I don't do a whole lot."
-  [& x]
+(defn -main [& x]
   (init-session)
-  (run *session 10)
-  )
+  (run 15))
