@@ -1,7 +1,8 @@
 (ns brick-one.core
   (:gen-class)
   (:require [odoyle.rules :as o]
-            [clojure.math :as math]))
+            [clojure.math :as math]
+            [brick-one.ws-channel :as ws]))
 
 ;; * Helpers
 
@@ -115,5 +116,6 @@
 
 
 (defn -main [& x]
+  (ws/run-aleph 8888)
   (init-session)
   (run 15))
