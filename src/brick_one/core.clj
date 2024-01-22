@@ -2,7 +2,9 @@
   (:gen-class)
   (:require [odoyle.rules :as o]
             [clojure.math :as math]
-            [brick-one.ws-channel :as ws]))
+            [brick-one.ws-channel :as ws]
+            [clojure.core.async :refer [chan poll! <!! >!!]]
+            ))
 
 ;; * Helpers
 
@@ -11,7 +13,7 @@
    {
     :x (if (> (:x c2) (:x c1)) (+ 1 (:x c1)) (- 1 (:x c1) ) )
     :y (if (> (:y c2) (:y c1)) (+ 1 (:y c1)) (- 1 (:y c1) ) )
-   } 
+   }
 )
 
 ;; Given coordinates c1 and c2, calculate the Euclidian distance between them
@@ -25,11 +27,12 @@
                           (math/pow (- y1 y2) 2))))))
 
 
-;; * Rules, entities, and session management 
+;; * Rules, entities, and session management
 
 ;; Dump the session
 (defn dump [session]
-   (prn (o/query-all session)))
+  (prn "Engine Inqueue: " ws/*engine-inqueue)
+  (prn "Sesssion: "(o/query-all session)))
 
 
 (def rules
@@ -53,7 +56,7 @@
     [:what
       ;; At every tick, if you find 2 pages such that one isn't an attractor and
       ;; and one is, move the former towards the latter until the distance between
-      ;; them becomes less than 2. 
+      ;; them becomes less than 2.
       [::time ::total tt]
       [p1 :page/attractor? false]
       [p2 :page/attractor? true]
@@ -69,8 +72,13 @@
    }))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; GLOBALS
+
 ;; create the session
 (def *session (atom (o/->session)))
+
 
 
 ;;  Add all the rules and some entities to the session
@@ -78,7 +86,7 @@
 
   (swap! *session
     (fn [session]
-      (-> 
+      (->
         ;; Add all the rules
         (reduce o/add-rule session rules)
 
@@ -94,15 +102,40 @@
 
 
 
-;; A step of the runtime
-(defn tick [session counter]
-  (prn counter (o/query-all session))
 
-  (swap! *session
-    (fn [session]
-      (-> session
-         (o/insert ::time ::total counter)
-         o/fire-rules)))
+
+
+;; A step of the runtime
+
+;; If there's a message from websocket, deal with it
+
+;; In principle by querying or updating session. At the moment, just reply that
+;; then engine heard it
+
+;; The format we receive messages is {:reply-chan a-reply-channel
+;; :edn parsed-edn-of-msg-from-client}
+
+;; The engine replies to the websocket server by pushing the reply to a-reply-channel
+
+;; If there's no message, poll! returns nil
+
+;; Finally update session with only the next counter value
+
+(defn tick [session counter]
+  (prn "Counter: " counter)
+  (let [msg (poll! ws/*engine-inqueue)
+        ]
+    (if msg
+      (do
+        (println (str "******** Engine received from client: " msg))
+        (>!! (:reply-chan msg) (str "A reply from the engine about " msg)) ))
+
+    (swap! *session
+           (fn [session]
+             (-> session
+                 (o/insert ::time ::total counter)
+
+                 o/fire-rules))))
 )
 
 ;; The main loop of the runtime
@@ -111,11 +144,13 @@
          counter 0]
     (if (= counter iterations)
       session
-      (recur (tick session counter) (inc counter)))))
+      (do
+        (Thread/sleep 50)
+        (recur (tick session counter) (inc counter))))))
 
 
 
 (defn -main [& x]
   (ws/run-aleph 8888)
   (init-session)
-  (run 15))
+  (run 1500))
