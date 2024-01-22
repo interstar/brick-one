@@ -5,7 +5,8 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [net.sekao/odoyle-rules "1.3.1"]
-                 [aleph "0.7.0"]]
+                 [aleph "0.7.0"]
+                 [org.clojure/core.async "1.6.681"]]
   :plugins [[lein-auto "0.1.3"]]
   :main ^:skip-aot brick-one.core
   :repl-options {:init-ns brick-one.core})
