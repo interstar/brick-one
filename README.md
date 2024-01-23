@@ -1,14 +1,17 @@
-# brick-one
+# BrickOne
 
-A Clojure library designed to ... well, that part is up to you.
+We're building our own "DynamicLand" / "FolkComputer" inspired "RoomOS".
 
-## Usage
+The main idea : a Rules based server (first draft is using O'Doyle Rules in Clojure) which holds the model of the interactive space.
 
-FIXME
+And which talks to various clients (including camera and projector managing agents) over WebSockets. 
+
+This is the first brick in the wall. It is not yet a house. It is not even a room.
+
 
 ## License
 
-Copyright © 2024 FIXME
+Copyright © 2024 Barbican Inference
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
