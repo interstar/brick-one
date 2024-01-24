@@ -1,13 +1,28 @@
 # BrickOne
 
-We're building our own "DynamicLand" / "FolkComputer" inspired "RoomOS".
+We have started building our own [DynamicLand](https://dynamicland.org/)- / [FolkComputer](https://folk.computer/)-inspired communal computer -- where the physical space around us gains new interactive abilities to help us think, create, and play together. A "Room OS" to start with, and eventually, a "Tangible OS" which you can take anywhere[^1].
 
-The main idea : a Rules based server (first draft is using O'Doyle Rules in Clojure) which holds the model of the interactive space.
+[^1]: Also see [Ubiquitous computing](https://en.wikipedia.org/wiki/Ubiquitous_computing), 
 
-And which talks to various clients (including camera and projector managing agents) over WebSockets. 
+This first stage experiments with some infrastructure technologies and ideas.
 
-This is the first brick in the wall. It is not yet a house. It is not even a room.
+Our main goal is to progressively hook together a queryable, shared world-model, a camera, a projector, and small programs to achieve a [projector-camera system](https://en.wikipedia.org/wiki/Projector_camera_systems)[^2].
 
+[^2]: For a review and further discussion, see eg [UbiBeam: Exploring the Interaction Space for Home Deployed Projector-Camera Systems](https://www.researchgate.net/publication/285333899_UbiBeam_Exploring_the_Interaction_Space_for_Home_Deployed_Projector-Camera_Systems)
+
+Our choices for this iteration:
+
+- **System architecture**: small, independent, and loosely-coupled peers communating via a shared workspace; following ideas from P2P architectures and [Microkernels](https://en.wikipedia.org/wiki/Microkernel)
+
+- **Programming paradigm**: inspired by [Production Rules](https://en.wikipedia.org/wiki/Production_system_(computer_science)), [Blackboard Systems](https://en.wikipedia.org/wiki/Blackboard_system), [Tuple Spaces](https://en.wikipedia.org/wiki/Tuple_space), and [Reactive programming](https://en.wikipedia.org/wiki/Reactive_programming)
+
+- **Modelling the interactive space**: via [O'Doyle Rules](https://github.com/oakes/odoyle-rules)
+
+- **Communication technology**: Websockets, with p2p semantics
+
+- **Host language(s)**: Clojure
+
+This is the first brick in the wall. It is not yet a house. It is not even a room. But it is a lot of fun. 
 
 ## License
 
