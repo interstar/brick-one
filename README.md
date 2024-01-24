@@ -24,7 +24,6 @@ Our choices for this iteration:
 
 This is the first brick in the wall. It is not yet a house. It is not even a room. But it is a lot of fun. 
 
-
 ## License
 
 Copyright © 2024 Barbican Inference
