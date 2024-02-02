@@ -4,15 +4,16 @@
             [clojure.math :as math]
             [brick-one.ws-channel :as ws]
             [clojure.core.async :refer [chan poll! <!! >!!]]
-            ))
+
+            [clojure.string :as str]))
 
 ;; * Helpers
 
 ;; Given coordinates c1 and c2, create a new one that brings c1 closer to c2
 (defn move [c1 c2]
    {
-    :x (if (> (:x c2) (:x c1)) (+ 1 (:x c1)) (- 1 (:x c1) ) )
-    :y (if (> (:y c2) (:y c1)) (+ 1 (:y c1)) (- 1 (:y c1) ) )
+    :x (if (> (:x c2) (:x c1)) (+ 1 (:x c1)) (- (:x c1) 1 ) )
+    :y (if (> (:y c2) (:y c1)) (+ 1 (:y c1)) (- (:y c1) 1 ) )
    }
 )
 
@@ -64,7 +65,7 @@
       [p2 :page/center c2]
       [p1 :page/distance-to-attractor d {:then false}]
      :when
-     (>= d 3)
+     (>= d 30)
      :then
        (o/insert!  p1 :page/center (move c1 c2))
        (o/insert!  p1 :page/distance-to-attractor (distance c1 c2))
@@ -84,6 +85,7 @@
 ;;  Add all the rules and some entities to the session
 (defn init-session []
 
+  (println "In init-session")
   (swap! *session
     (fn [session]
       (->
@@ -94,16 +96,23 @@
         (o/insert 1 :page/center {:x 2 :y 2 } )
         (o/insert 1 :page/attractor? false)
 
-        (o/insert 2 :page/center {:x 15 :y 15})
+        (o/insert 2 :page/center {:x 300 :y 400})
         (o/insert 2 :page/attractor? true)
 
         ;; we also need to initialise this value with something
-        (o/insert 1 :page/distance-to-attractor 100) ))))
+        (o/insert 1 :page/distance-to-attractor 100)
+        o/fire-rules))))
 
 
 
 
-
+(defn session->model [session]
+  (println session)
+  (->> session
+       (filter #(.contains (str (second %)) ":page"))
+       (map #(str (first %) "_" (second %) "_" (last %)))
+       (into [])
+       (str/join "\n")))
 
 ;; A step of the runtime
 
@@ -128,7 +137,7 @@
     (if msg
       (do
         (println (str "******** Engine received from client: " msg))
-        (>!! (:reply-chan msg) (str "A reply from the engine about " msg)) ))
+        (>!! (:reply-chan msg) (session->model (o/query-all session))) ))
 
     (swap! *session
            (fn [session]
@@ -153,4 +162,4 @@
 (defn -main [& x]
   (ws/run-aleph 8888)
   (init-session)
-  (run 1500))
+  (run 1500000))

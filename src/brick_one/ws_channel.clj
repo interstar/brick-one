@@ -30,7 +30,7 @@
         for-engine {:reply-chan c :edn edn}]
     (println "Sending to engine:: "for-engine)
     (>!! *engine-inqueue for-engine)
-    (str "I heard \"" edn "\" and the engine said  \n" (<!! c)))
+    (<!! c))
   )
 
 (defn dialog-handler
